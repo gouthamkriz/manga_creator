@@ -1,0 +1,820 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Manga Studio – Character Maker</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Enhanced styles for API integration */
+    .variant-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .variant-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .character-item {
+      transition: background-color 0.2s ease;
+    }
+    
+    .character-item:hover {
+      background-color: #f8fafc;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+      font-style: italic;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 2px dashed #d1d5db;
+    }
+    
+    .error {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #fca5a5;
+    }
+    
+    .success {
+      background: #dcfce7;
+      color: #166534;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #86efac;
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .variant-image img {
+      border: 2px solid transparent;
+      transition: border-color 0.2s ease;
+    }
+    
+    .variant-card:hover .variant-image img {
+      border-color: var(--accent);
+    }
+    
+    .character-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      margin-right: 12px;
+    }
+    
+    .no-avatar {
+      width: 50px;
+      height: 50px;
+      background: #e2e8f0;
+      border-radius: 8px;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    .health-status {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .health-healthy {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    
+    .health-degraded {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    
+    .health-unhealthy {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+    }
+    
+    .analytics-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .analytics-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body data-page="character">
+
+<header>
+  <div class="brand">Manga Studio</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="character.html">Character Maker</a>
+    <a href="object.html">Object Maker</a>
+  </nav>
+</header>
+
+<div class="container grid-2">
+  <!-- main column -->
+  <div>
+    <!-- Health status banner -->
+    <div id="health-status" class="health-status" style="display: none;"></div>
+    
+    <div class="panel">
+      <h3>Create Character with AI</h3>
+      <div class="small" style="margin-bottom: 12px;">
+        Generate manga-style character variants using AI. Describe your character and we'll create multiple visual options.
+      </div>
+      
+      <!-- Enhanced form with better labels -->
+      <div class="form-row">
+        <label for="c-name">Character Name *</label>
+        <input id="c-name" type="text" placeholder="E.g., Kaori Tanaka, Rei Ayanami">
+      </div>
+      
+      <div class="form-row">
+        <label for="c-age">Current Age (optional)</label>
+        <input id="c-age" type="number" min="0" max="200" placeholder="Leave blank if unknown">
+        <div class="small">Age helps generate age-appropriate character designs</div>
+      </div>
+      
+      <div class="form-row">
+        <label for="c-height">Height (cm) (optional)</label>
+        <input id="c-height" type="number" min="0" max="300" placeholder="E.g., 165">
+      </div>
+      
+      <div class="form-row">
+        <label for="c-desc">Physical Description</label>
+        <textarea id="c-desc" placeholder="Describe appearance: hair color, eye color, build, clothing style, unique features...&#10;&#10;Examples:&#10;- Long silver hair, purple eyes, tall and elegant&#10;- Short messy brown hair, green eyes, athletic build&#10;- Pink hair in twin tails, blue eyes, petite"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn" id="generate-candidates">Generate AI Variants</button>
+        <button class="btn" id="regenerate-candidates" style="background:#94a3b8">Regenerate</button>
+        <button class="btn" id="check-service" style="background:#059669">Check Service</button>
+      </div>
+
+      <!-- Generation progress and results -->
+      <div id="generation-status" style="display: none; margin-bottom: 16px;"></div>
+      
+      <div>
+        <h4>Character Variants</h4>
+        <div class="small" style="margin-bottom: 12px;">
+          Choose your favorite design from the AI-generated options below:
+        </div>
+        <div id="candidate-grid" class="card-grid"></div>
+      </div>
+    </div>
+
+    <!-- Enhanced character management -->
+    <div id="char-manage" class="panel" style="margin-top:14px;display:none">
+      <h3>Manage Character <span id="manage-title"></span> <span id="manage-id" class="small"></span></h3>
+      <div class="small">Add costumes, age states, and character changes. Each variation can have its own AI-generated image.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <!-- Enhanced Costumes -->
+        <div>
+          <h4>Costumes & Outfits</h4>
+          <div class="form-row">
+            <label for="costume-name">Costume Name</label>
+            <input id="costume-name" type="text" placeholder="School uniform, battle armor...">
+          </div>
+          <div class="form-row">
+            <label for="costume-desc">Costume Details</label>
+            <textarea id="costume-desc" placeholder="Detailed description for AI generation..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="add-costume">Add Costume</button>
+            <button class="btn" id="generate-costume-image" style="background:#8b5cf6">Generate Image</button>
+          </div>
+          <div id="costume-list" class="list" style="margin-top:8px"></div>
+        </div>
+
+        <!-- Enhanced Ages + Changes -->
+        <div>
+          <h4>Age Progression</h4>
+          <div class="form-row">
+            <label for="age-val">Age (years)</label>
+            <input id="age-val" type="number" min="0" max="200">
+          </div>
+          <div class="form-row">
+            <label for="age-notes">Age-specific Notes</label>
+            <textarea id="age-notes" placeholder="How the character looks/acts at this age..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="add-age">Add Age State</button>
+            <button class="btn" id="generate-age-image" style="background:#8b5cf6">Generate Image</button>
+          </div>
+          <div id="age-list" class="list" style="margin-top:8px"></div>
+
+          <hr style="margin: 16px 0;">
+
+          <h4>Character Changes</h4>
+          <div class="form-row">
+            <label for="chg-when">When (Timeline)</label>
+            <input id="chg-when" type="text" placeholder="e.g., After training, Chapter 5">
+          </div>
+          <div class="form-row">
+            <label for="chg-what">What Changed</label>
+            <textarea id="chg-what" placeholder="Physical or emotional changes..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="add-change">Add Change</button>
+          </div>
+          <div id="change-list" class="list" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced sidebar -->
+  <aside class="panel">
+    <!-- Character Analytics -->
+    <div id="character-analytics" class="analytics-card" style="display: none;">
+      <h4 style="margin: 0 0 12px 0;">Collection Stats</h4>
+      <div class="analytics-stat">
+        <span>Total Characters:</span>
+        <span class="stat-value" id="stat-total">0</span>
+      </div>
+      <div class="analytics-stat">
+        <span>With Avatars:</span>
+        <span class="stat-value" id="stat-avatars">0</span>
+      </div>
+      <div class="analytics-stat">
+        <span>Average Age:</span>
+        <span class="stat-value" id="stat-avg-age">-</span>
+      </div>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Your Characters</h3>
+      <div style="display:flex;gap:6px">
+        <button id="refresh-characters" class="btn" style="background:#10b981;font-size:12px;padding:6px 10px">Refresh</button>
+        <button id="export-work" class="btn" style="background:#06b6d4;font-size:12px;padding:6px 10px">Export</button>
+      </div>
+    </div>
+    
+    <!-- Search functionality -->
+    <div style="margin-bottom: 12px;">
+      <input id="search-characters" type="text" placeholder="Search characters..." style="width: 100%; margin-bottom: 8px;">
+      <div style="display: flex; gap: 6px;">
+        <input id="min-age" type="number" placeholder="Min age" style="width: 48%;">
+        <input id="max-age" type="number" placeholder="Max age" style="width: 48%;">
+      </div>
+    </div>
+    
+    <div class="small" style="margin-bottom: 12px;">
+      Characters are saved to your database. Each character can have multiple costumes, age states, and generated images.
+    </div>
+    
+    <div id="character-list" style="margin-top:12px" class="list"></div>
+    
+    <!-- Bulk operations -->
+    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+      <h4>Bulk Operations</h4>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+        <button id="bulk-generate-missing-avatars" class="btn" style="background:#f59e0b;font-size:11px;padding:6px 8px">Generate Missing Avatars</button>
+        <button id="export-all-characters" class="btn" style="background:#6366f1;font-size:11px;padding:6px 8px">Export All</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+/* Enhanced Character Frontend with Full API Integration */
+const API_BASE_URL = 'http://localhost:8000';
+
+// API Helper functions
+async function apiCall(endpoint, options = {}) {
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `API Error: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('API call failed:', error);
+        throw error;
+    }
+}
+
+// UI State Management
+let isGenerating = false;
+let selectedCharacterId = null;
+let selectedCharacterData = null;
+
+// DOM Elements
+const nameInput = document.getElementById('c-name');
+const ageInput = document.getElementById('c-age');
+const heightInput = document.getElementById('c-height');
+const descInput = document.getElementById('c-desc');
+const genBtn = document.getElementById('generate-candidates');
+const regenBtn = document.getElementById('regenerate-candidates');
+const checkServiceBtn = document.getElementById('check-service');
+const grid = document.getElementById('candidate-grid');
+const listEl = document.getElementById('character-list');
+const managePanel = document.getElementById('char-manage');
+const healthStatus = document.getElementById('health-status');
+const generationStatus = document.getElementById('generation-status');
+const characterAnalytics = document.getElementById('character-analytics');
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', initCharacterPage);
+
+async function initCharacterPage() {
+    await checkHealthStatus();
+    await renderCharacterList();
+    await updateAnalytics();
+    setupEventListeners();
+}
+
+async function checkHealthStatus() {
+    try {
+        const health = await apiCall('/characters/health/image-service');
+        
+        healthStatus.style.display = 'block';
+        healthStatus.className = `health-status health-${health.status}`;
+        
+        if (health.status === 'healthy') {
+            healthStatus.innerHTML = `✅ Image generation service is online (${Math.round(health.response_time_ms)}ms)`;
+        } else if (health.status === 'degraded') {
+            healthStatus.innerHTML = `⚠️ Image generation service is slow. Generation may take longer than usual.`;
+        } else {
+            healthStatus.innerHTML = `❌ Image generation service is offline. Characters can be created without images.`;
+        }
+    } catch (error) {
+        healthStatus.style.display = 'block';
+        healthStatus.className = 'health-status health-unhealthy';
+        healthStatus.innerHTML = `❌ Cannot connect to image generation service.`;
+    }
+}
+
+async function generateCandidates() {
+    const name = nameInput.value.trim();
+    const age = ageInput.value.trim();
+    const height = heightInput.value.trim();
+    const desc = descInput.value.trim();
+    
+    if (!name) {
+        showError(generationStatus, 'Please enter a character name first');
+        return;
+    }
+
+    if (isGenerating) {
+        alert('Generation already in progress, please wait...');
+        return;
+    }
+
+    isGenerating = true;
+    setButtonsDisabled(true);
+    
+    generationStatus.style.display = 'block';
+    generationStatus.innerHTML = `
+        <div class="loading">
+            <div style="font-size: 24px; margin-bottom: 8px;">🎨</div>
+            <div>Generating manga character variants for "${name}"...</div>
+            <div class="small" style="margin-top: 8px;">This usually takes 30-60 seconds</div>
+            <div class="small">Creating 6 different style variations</div>
+        </div>
+    `;
+    
+    grid.innerHTML = '';
+
+    try {
+        const response = await apiCall('/characters/generate-variants', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: name,
+                description: desc || null,
+                age: age ? parseInt(age) : null,
+                height_cm: height ? parseFloat(height) : null
+            })
+        });
+
+        generationStatus.style.display = 'none';
+        grid.innerHTML = '';
+        
+        if (response.variants && response.variants.length > 0) {
+            response.variants.forEach((variant, i) => {
+                const card = document.createElement('div');
+                card.className = 'card variant-card';
+                card.innerHTML = `
+                    <div class="variant-image">
+                        <img src="${variant.image_url}" alt="Variant ${variant.variant_id}" 
+                             style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px;"
+                             loading="lazy">
+                    </div>
+                    <div style="margin: 12px 0; text-align: left;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">Variant ${variant.variant_id}</div>
+                        <div class="small" style="color: #6b7280; line-height: 1.3;">${variant.style}</div>
+                    </div>
+                    <button class="btn btn-select" data-variant="${i}" style="width: 100%;">
+                        Select This Design
+                    </button>
+                `;
+                
+                // Select button saves character with this avatar
+                card.querySelector('.btn-select').addEventListener('click', async () => {
+                    await saveCharacterWithAvatar(variant, {
+                        name, 
+                        description: desc, 
+                        age: age ? parseInt(age) : null, 
+                        height_cm: height ? parseFloat(height) : null
+                    });
+                });
+                
+                grid.appendChild(card);
+            });
+            
+            // Show success message
+            showSuccess(generationStatus, `Generated ${response.variants.length} character variants! Choose your favorite design.`);
+            
+        } else {
+            showError(grid, 'No variants generated. Try a different description or check your connection.');
+        }
+
+    } catch (error) {
+        showError(generationStatus, `Generation failed: ${error.message}`);
+        console.error('Generation error:', error);
+    } finally {
+        isGenerating = false;
+        setButtonsDisabled(false);
+    }
+}
+
+async function saveCharacterWithAvatar(variant, characterData) {
+    try {
+        const newCharacter = await apiCall('/characters/', {
+            method: 'POST',
+            body: JSON.stringify({
+                ...characterData,
+                avatar_url: variant.image_url
+            })
+        });
+
+        showSuccess(generationStatus, `Character ${newCharacter.char_code} saved successfully!`);
+        
+        // Clear form
+        nameInput.value = '';
+        ageInput.value = '';
+        heightInput.value = '';
+        descInput.value = '';
+        grid.innerHTML = '';
+        
+        await renderCharacterList();
+        await updateAnalytics();
+        openManage(newCharacter.id);
+        
+    } catch (error) {
+        showError(generationStatus, `Failed to save character: ${error.message}`);
+    }
+}
+
+async function renderCharacterList() {
+    try {
+        showLoading(listEl, 'Loading characters...');
+        const characters = await apiCall('/characters/');
+        
+        listEl.innerHTML = '';
+        if (characters.length === 0) {
+            listEl.innerHTML = '<div class="small">No characters yet. Create one above!</div>';
+            return;
+        }
+
+        characters.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'item character-item';
+            
+            const avatarHtml = c.avatar_url ? 
+                `<img src="${c.avatar_url}" alt="${c.name}" class="character-avatar">` : 
+                '<div class="no-avatar">No Image</div>';
+            
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; flex: 1;">
+                    ${avatarHtml}
+                    <div>
+                        <div style="font-weight: 700">${c.name}</div>
+                        <div class="small">${c.char_code}${c.age ? ' • ' + c.age + 'y' : ''}${c.height_cm ? ' • ' + c.height_cm + 'cm' : ''}</div>
+                        ${c.description ? `<div class="small" style="margin-top: 2px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${c.description.slice(0, 50)}${c.description.length > 50 ? '...' : ''}</div>` : ''}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 4px; flex-direction: column;">
+                    <button class="btn btn-manage" data-id="${c.id}" style="font-size: 11px; padding: 4px 8px;">Manage</button>
+                    <button class="btn btn-regenerate" data-id="${c.id}" style="background: #059669; font-size: 11px; padding: 4px 8px;">New Avatar</button>
+                    <button class="btn btn-delete" data-id="${c.id}" style="background: #ef4444; font-size: 11px; padding: 4px 8px;">Delete</button>
+                </div>
+            `;
+            
+            listEl.appendChild(item);
+        });
+
+        // Wire up buttons
+        document.querySelectorAll('.btn-manage').forEach(btn => {
+            btn.addEventListener('click', (e) => openManage(parseInt(e.target.dataset.id)));
+        });
+
+        document.querySelectorAll('.btn-regenerate').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if (!confirm('Generate a new avatar for this character?')) return;
+                await regenerateAvatar(parseInt(e.target.dataset.id), e.target);
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                if (!confirm('Delete this character? This action cannot be undone.')) return;
+                await deleteCharacter(parseInt(e.target.dataset.id));
+            });
+        });
+
+    } catch (error) {
+        showError(listEl, `Failed to load characters: ${error.message}`);
+    }
+}
+
+async function regenerateAvatar(characterId, button) {
+    const originalText = button.textContent;
+    
+    try {
+        button.disabled = true;
+        button.textContent = 'Generating...';
+        
+        await apiCall(`/characters/${characterId}/generate-avatar`, {
+            method: 'POST'
+        });
+        
+        showSuccess(generationStatus, 'New avatar generated successfully!');
+        await renderCharacterList();
+        
+    } catch (error) {
+        showError(generationStatus, `Avatar generation failed: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+
+async function deleteCharacter(characterId) {
+    try {
+        await apiCall(`/characters/${characterId}`, { method: 'DELETE' });
+        await renderCharacterList();
+        await updateAnalytics();
+        showSuccess(generationStatus, 'Character deleted successfully');
+        
+        // Close manage panel if this character was selected
+        if (selectedCharacterId === characterId) {
+            managePanel.style.display = 'none';
+            selectedCharacterId = null;
+        }
+    } catch (error) {
+        showError(generationStatus, `Failed to delete character: ${error.message}`);
+    }
+}
+
+async function openManage(characterId) {
+    try {
+        const character = await apiCall(`/characters/${characterId}`);
+        selectedCharacterId = characterId;
+        selectedCharacterData = character;
+        
+        managePanel.style.display = 'block';
+        document.getElementById('manage-title').textContent = character.name;
+        document.getElementById('manage-id').textContent = character.char_code;
+        
+        // Scroll to management panel
+        managePanel.scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (error) {
+        showError(generationStatus, `Failed to load character: ${error.message}`);
+    }
+}
+
+async function updateAnalytics() {
+    try {
+        const analytics = await apiCall('/characters/analytics/summary');
+        
+        characterAnalytics.style.display = 'block';
+        document.getElementById('stat-total').textContent = analytics.total_characters;
+        document.getElementById('stat-avatars').textContent = analytics.characters_with_avatars;
+        document.getElementById('stat-avg-age').textContent = analytics.average_age || '-';
+        
+    } catch (error) {
+        console.warn('Failed to load analytics:', error);
+        characterAnalytics.style.display = 'none';
+    }
+}
+
+function setupEventListeners() {
+    genBtn.addEventListener('click', generateCandidates);
+    regenBtn.addEventListener('click', generateCandidates);
+    checkServiceBtn.addEventListener('click', checkHealthStatus);
+    
+    document.getElementById('refresh-characters').addEventListener('click', async () => {
+        await renderCharacterList();
+        await updateAnalytics();
+    });
+    
+    // Search functionality
+    let searchTimeout;
+    document.getElementById('search-characters').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => performSearch(), 300);
+    });
+    
+    document.getElementById('min-age').addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => performSearch(), 300);
+    });
+    
+    document.getElementById('max-age').addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => performSearch(), 300);
+    });
+}
+
+async function performSearch() {
+    const searchName = document.getElementById('search-characters').value.trim();
+    const minAge = document.getElementById('min-age').value;
+    const maxAge = document.getElementById('max-age').value;
+    
+    try {
+        const params = new URLSearchParams();
+        if (searchName) params.append('name', searchName);
+        if (minAge) params.append('min_age', minAge);
+        if (maxAge) params.append('max_age', maxAge);
+        
+        const characters = await apiCall(`/characters/search/?${params.toString()}`);
+        renderFilteredCharacters(characters);
+        
+    } catch (error) {
+        console.error('Search failed:', error);
+    }
+}
+
+function renderFilteredCharacters(characters) {
+    // Use same rendering logic as renderCharacterList but with filtered data
+    listEl.innerHTML = '';
+    if (characters.length === 0) {
+        listEl.innerHTML = '<div class="small">No characters match your search criteria.</div>';
+        return;
+    }
+    
+    // Reuse the character rendering logic from renderCharacterList
+    // This could be refactored into a separate function
+    characters.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'item character-item';
+        
+        const avatarHtml = c.avatar_url ? 
+            `<img src="${c.avatar_url}" alt="${c.name}" class="character-avatar">` : 
+            '<div class="no-avatar">No Image</div>';
+        
+        item.innerHTML = `
+            <div style="display: flex; align-items: center; flex: 1;">
+                ${avatarHtml}
+                <div>
+                    <div style="font-weight: 700">${c.name}</div>
+                    <div class="small">${c.char_code}${c.age ? ' • ' + c.age + 'y' : ''}${c.height_cm ? ' • ' + c.height_cm + 'cm' : ''}</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 4px; flex-direction: column;">
+                <button class="btn btn-manage" data-id="${c.id}" style="font-size: 11px; padding: 4px 8px;">Manage</button>
+                <button class="btn btn-regenerate" data-id="${c.id}" style="background: #059669; font-size: 11px; padding: 4px 8px;">New Avatar</button>
+                <button class="btn btn-delete" data-id="${c.id}" style="background: #ef4444; font-size: 11px; padding: 4px 8px;">Delete</button>
+            </div>
+        `;
+        
+        listEl.appendChild(item);
+    });
+    
+    // Re-wire buttons for filtered results
+    wireCharacterButtons();
+}
+
+function wireCharacterButtons() {
+    document.querySelectorAll('.btn-manage').forEach(btn => {
+        btn.addEventListener('click', (e) => openManage(parseInt(e.target.dataset.id)));
+    });
+
+    document.querySelectorAll('.btn-regenerate').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!confirm('Generate a new avatar for this character?')) return;
+            await regenerateAvatar(parseInt(e.target.dataset.id), e.target);
+        });
+    });
+
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            if (!confirm('Delete this character? This action cannot be undone.')) return;
+            await deleteCharacter(parseInt(e.target.dataset.id));
+        });
+    });
+}
+
+function setButtonsDisabled(disabled) {
+    genBtn.disabled = disabled;
+    regenBtn.disabled = disabled;
+    genBtn.textContent = disabled ? 'Generating...' : 'Generate AI Variants';
+}
+
+function showLoading(element, message = 'Loading...') {
+    element.innerHTML = `
+        <div class="loading">
+            <div style="margin-right: 10px;">⏳</div>
+            <div>${message}</div>
+        </div>
+    `;
+}
+
+function showError(element, message) {
+    element.style.display = 'block';
+    element.innerHTML = `
+        <div class="error">
+            <strong>Error:</strong> ${message}
+        </div>
+    `;
+    setTimeout(() => {
+        element.style.display = 'none';
+    }, 5000);
+}
+
+function showSuccess(element, message) {
+    element.style.display = 'block';
+    element.innerHTML = `
+        <div class="success">
+            ${message}
+        </div>
+    `;
+    setTimeout(() => {
+        element.style.display = 'none';
+    }, 3000);
+}
+
+// Export functionality
+document.getElementById('export-work').addEventListener('click', async () => {
+    try {
+        const characters = await apiCall('/characters/');
+        const dataStr = JSON.stringify({
+            characters: characters,
+            exported_at: new Date().toISOString(),
+            version: "1.0"
+        }, null, 2);
+        
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `manga_characters_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        showSuccess(generationStatus, 'Characters exported successfully!');
+        
+    } catch (error) {
+        showError(generationStatus, `Export failed: ${error.message}`);
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!-- manga.html -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport"content="width=device-width,initial-scale=1">
+<title>Manga Section</title>
+<link rel="stylesheet" href="styles.css"></head>
+<body data-page="manga">
+<header>
+  <div class="brand">Manga Studio</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="manga.html">Manga Section</a>
+  </nav>
+</header>
+
+<div class="container grid-2">
+  <div>
+    <div class="panel">
+      <h3>Create Book</h3>
+      <div class="form-row"><label for="book-title">Book Title</label><input id="book-title" type="text"></div>
+      <div style="display:flex;gap:8px"><button class="btn" id="create-book">Create Book</button></div>
+      <h4 style="margin-top:12px">Books</h4>
+      <div id="book-list" class="list"></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h3>Selected Book</h3>
+    <div class="form-row"><label>Current</label><div id="current-book" class="small">None</div></div>
+    <div class="form-row"><label for="add-page-id">Add Page ID</label><input id="add-page-id" type="text"></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="add-page-to-book">Add Page</button></div>
+    <h4 style="margin-top:12px">Pages in Book</h4>
+    <div id="book-pages" class="list"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" id="print-book">Print</button>
+      <button class="btn" id="export-book">Export JSON</button>
+    </div>
+  </aside>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!-- index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Manga Studio — Home</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="home"><!-- data-page used by script.js to decide which init to run -->
+
+<header>
+  <div class="brand">Manga Studio</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="character.html">Character Maker</a>
+    <a href="object.html">Object Maker</a>
+    <a href="plotter.html">Story Plotter</a>
+    <a href="page_loader.html">Page Loader</a>
+    <a href="manga.html">Manga Section</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <div>
+      <h1>Create & manage characters, frames, pages — all in one place</h1>
+      <p class="small">Start by creating characters, then build frames and assign them to page layouts.</p>
+    </div>
+    <div>
+      <a class="btn" href="character.html">Create Character</a>
+    </div>
+  </div>
+
+  <div style="margin-top:18px" class="grid-2">
+    <div class="panel">
+      <h3>Quick tips</h3>
+      <ul class="small">
+        <li>Always add age when creating a character — it helps age-based generation</li>
+        <li>Save frames from the plotter before assigning them to pages</li>
+        <li>Use the export/import to backup your workspace</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Workspace</h3>
+      <div class="list small">
+        <div>Characters: <span id="home-count-chars">0</span></div>
+        <div>Objects: <span id="home-count-objects">0</span></div>
+        <div>Frames: <span id="home-count-frames">0</span></div>
+        <div>Pages: <span id="home-count-pages">0</span></div>
+        <div>Books: <span id="home-count-books">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer small">Built with vanilla HTML, CSS & JavaScript. Local data saved in browser localStorage.</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

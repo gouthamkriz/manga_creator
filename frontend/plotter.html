@@ -1,0 +1,38 @@
+<!-- plotter.html -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport"content="width=device-width,initial-scale=1">
+<title>Story Plotter</title>
+<link rel="stylesheet" href="styles.css"></head>
+<body data-page="plotter">
+<header>
+  <div class="brand">Manga Studio</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="plotter.html">Story Plotter</a>
+  </nav>
+</header>
+
+<div class="container grid-2">
+  <div>
+    <div class="panel">
+      <h3>Storyline (paste)</h3>
+      <div class="form-row"><label for="plot-input">Storyline</label><textarea id="plot-input" placeholder="Paste your plot, separate paragraphs with blank lines..."></textarea></div>
+      <div style="display:flex;gap:8px"><button class="btn" id="create-plot">Create Plot → Frames</button></div>
+    </div>
+
+    <div id="frames-work" class="panel" style="margin-top:12px">
+      <h4>Editable Frames (work)</h4>
+      <div id="frames-work-list" class="list small"></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h3>Saved Frames</h3>
+    <div id="frames-saved" class="list"></div>
+  </aside>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!-- object.html -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport"content="width=device-width,initial-scale=1">
+<title>Object Maker</title>
+<link rel="stylesheet" href="styles.css"></head>
+<body data-page="object">
+<header>
+  <div class="brand">Manga Studio</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="character.html">Character Maker</a>
+    <a href="object.html">Object Maker</a>
+  </nav>
+</header>
+
+<div class="container grid-2">
+  <div>
+    <div class="panel">
+      <h3>Create Object</h3>
+      <div class="form-row"><label for="o-name">Name</label><input id="o-name" type="text"></div>
+      <div class="form-row"><label for="o-height">Height (cm)</label><input id="o-height" type="number" min="0"></div>
+      <div class="form-row"><label for="o-color">Color</label><input id="o-color" type="color" value="#aab4ff"></div>
+      <div class="form-row"><label for="o-desc">Description</label><textarea id="o-desc"></textarea></div>
+      <div style="display:flex;gap:8px"><button class="btn" id="add-object">Save Object</button></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h3>Your Objects</h3>
+    <div id="object-list" class="list"></div>
+  </aside>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

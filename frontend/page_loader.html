@@ -1,0 +1,48 @@
+<!-- page_loader.html -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport"content="width=device-width,initial-scale=1">
+<title>Page Loader</title>
+<link rel="stylesheet" href="styles.css"></head>
+<body data-page="page_loader">
+<header>
+  <div class="brand">Manga Studio</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="page_loader.html">Page Loader</a>
+  </nav>
+</header>
+
+<div class="container grid-2">
+  <div>
+    <div class="panel">
+      <h3>Page Layout</h3>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <select id="layout-preset">
+          <option value="">Choose preset…</option>
+          <option value="2-vertical">2 Vertical</option>
+          <option value="3-horizontal">3 Horizontal</option>
+          <option value="4-grid">4 Grid</option>
+          <option value="1-focus-2">1 Large + 2 Small</option>
+        </select>
+        <button class="btn" id="new-page">New Page</button>
+        <button class="btn" id="save-page">Save Page</button>
+      </div>
+      <div class="frame-board" id="page-board">
+        <!-- slot boxes injected here -->
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h3>Slots</h3>
+    <div id="slot-list" class="list small"></div>
+    <hr>
+    <h3>Saved Pages</h3>
+    <div id="pages-saved" class="list"></div>
+  </aside>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

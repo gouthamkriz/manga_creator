@@ -1,0 +1,9 @@
+character.html
+db_connect.py
+index.html
+manga.html
+object.html
+page_loader.html
+plotter.html
+script.js
+styles.css
