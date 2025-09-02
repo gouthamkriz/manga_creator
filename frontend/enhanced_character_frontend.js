@@ -101,7 +101,7 @@ function initCharacter() {
                                 description: desc || null,
                                 age: age ? parseInt(age) : null,
                                 height_cm: height ? parseFloat(height) : null,
-                                avatar_url: variant.image_url
+                                image_url: variant.image_url
                             };
 
                             const newCharacter = await apiCall('/characters', {
@@ -157,8 +157,8 @@ function initCharacter() {
                 const item = document.createElement('div');
                 item.className = 'item character-item';
                 
-                const avatarHtml = c.avatar_url ? 
-                    `<img src="${c.avatar_url}" alt="${c.name}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; margin-right: 10px;">` : 
+                const avatarHtml = c.image_url ? 
+                    `<img src="${c.image_url}" alt="${c.name}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; margin-right: 10px;">` : 
                     '<div style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 6px; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px;">No Image</div>';
                 
                 item.innerHTML = `
@@ -537,7 +537,7 @@ function getCharacterAnalytics(characters) {
         total: characters.length,
         averageAge: Math.round(averageAge),
         ageGroups,
-        hasAvatars: characters.filter(c => c.avatar_url).length
+        hasAvatars: characters.filter(c => c.image_url).length
     };
 }
 

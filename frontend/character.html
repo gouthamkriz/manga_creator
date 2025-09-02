@@ -484,11 +484,11 @@ async function generateCandidates() {
 
 async function saveCharacterWithAvatar(variant, characterData) {
     try {
-        const newCharacter = await apiCall('/characters/', {
+        const newCharacter = await apiCall('/characters', {
             method: 'POST',
             body: JSON.stringify({
                 ...characterData,
-                avatar_url: variant.image_url
+                image_url: variant.image_url
             })
         });
 
@@ -525,8 +525,8 @@ async function renderCharacterList() {
             const item = document.createElement('div');
             item.className = 'item character-item';
             
-            const avatarHtml = c.avatar_url ? 
-                `<img src="${c.avatar_url}" alt="${c.name}" class="character-avatar">` : 
+            const avatarHtml = c.image_url ? 
+                `<img src="${c.image_url}" alt="${c.name}" class="character-avatar">` : 
                 '<div class="no-avatar">No Image</div>';
             
             item.innerHTML = `
@@ -705,8 +705,8 @@ function renderFilteredCharacters(characters) {
         const item = document.createElement('div');
         item.className = 'item character-item';
         
-        const avatarHtml = c.avatar_url ? 
-            `<img src="${c.avatar_url}" alt="${c.name}" class="character-avatar">` : 
+        const avatarHtml = c.image_url ? 
+            `<img src="${c.image_url}" alt="${c.name}" class="character-avatar">` : 
             '<div class="no-avatar">No Image</div>';
         
         item.innerHTML = `

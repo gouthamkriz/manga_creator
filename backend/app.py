@@ -42,7 +42,7 @@ def get_db():
 def get_characters(db: Session = Depends(get_db)):
     return db.query(models.Character).all()
 
-@app.post("/characters", response_model=schemas.CharacterResponse)
+@app.post("/characters/", response_model=schemas.CharacterResponse)
 def create_character(character: schemas.CharacterCreate, db: Session = Depends(get_db)):
     # Generate char_code dynamically like C-000X
     count = db.query(models.Character).count() + 1
@@ -54,7 +54,7 @@ def create_character(character: schemas.CharacterCreate, db: Session = Depends(g
         description=character.description,
         age=character.age,
         height_cm=character.height_cm,
-        avatar_url=character.avatar_url,
+        image_url=character.image_url,
     )
     db.add(new_character)
     db.commit()
@@ -181,15 +181,15 @@ async def generate_character_avatar(character_id: int, style_preference: str = "
             if response.status_code == 200:
                 image_data = response.content
                 base64_image = base64.b64encode(image_data).decode()
-                avatar_url = f"data:image/png;base64,{base64_image}"
+                image_url = f"data:image/png;base64,{base64_image}"
                 
                 # Update character with new avatar
-                character.avatar_url = avatar_url
+                character.image_url = image_url
                 db.commit()
                 
                 return {
                     "character_id": character_id,
-                    "avatar_url": avatar_url,
+                    "image_url": image_url,
                     "prompt_used": prompt
                 }
             else:
@@ -243,14 +243,14 @@ async def bulk_generate_characters(request: schemas.BulkGenerationRequest):
                 if response.status_code == 200:
                     image_data = response.content
                     base64_image = base64.b64encode(image_data).decode()
-                    avatar_url = f"data:image/png;base64,{base64_image}"
+                    image_url = f"data:image/png;base64,{base64_image}"
                     
                     results.append({
                         "name": char_data.name,
                         "description": char_data.description,
                         "age": char_data.age,
                         "height_cm": char_data.height_cm,
-                        "avatar_url": avatar_url,
+                        "image_url": image_url,
                         "generated": True
                     })
                 else:
@@ -259,7 +259,7 @@ async def bulk_generate_characters(request: schemas.BulkGenerationRequest):
                         "description": char_data.description,
                         "age": char_data.age,
                         "height_cm": char_data.height_cm,
-                        "avatar_url": None,
+                        "image_url": None,
                         "generated": False,
                         "error": "Image generation failed"
                     })

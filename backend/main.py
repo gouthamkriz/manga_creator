@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 import models
 from db_connect import engine
 import logging
+from sqlalchemy import func  # Added import for func
 
 # Import route modules
 from character_routes import router as character_router

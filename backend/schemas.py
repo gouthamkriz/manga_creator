@@ -8,7 +8,7 @@ class CharacterBase(BaseModel):
     description: Optional[str] = None
     age: Optional[int] = None
     height_cm: Optional[float] = None
-    avatar_url: Optional[str] = None
+    image_url: Optional[str] = None
 
 class CharacterCreate(CharacterBase):
     pass
@@ -18,7 +18,7 @@ class CharacterUpdate(BaseModel):
     description: Optional[str] = None
     age: Optional[int] = None
     height_cm: Optional[float] = None
-    avatar_url: Optional[str] = None
+    image_url: Optional[str] = None
 
 class CharacterResponse(CharacterBase):
     id: int
@@ -61,7 +61,7 @@ class BulkGenerationResult(BaseModel):
     description: Optional[str]
     age: Optional[int]
     height_cm: Optional[float]
-    avatar_url: Optional[str]
+    image_url: Optional[str]
     generated: bool
     error: Optional[str] = None
 
@@ -70,7 +70,7 @@ class BulkGenerationResponse(BaseModel):
 
 class AvatarGenerationResponse(BaseModel):
     character_id: int
-    avatar_url: str
+    image_url: str
     prompt_used: str
 
 class HealthCheckResponse(BaseModel):

@@ -13,7 +13,7 @@ class Character(Base):
     description = Column(Text)
     age = Column(Integer)
     height_cm = Column(Float)
-    avatar_url = Column(Text)  # Can store base64 or URL
+    image_url = Column(String, nullable=True)  # Can store base64 or URL
     generation_prompt = Column(Text)  # Store the prompt used for generation
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())

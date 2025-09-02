@@ -77,7 +77,7 @@ async def create_character(character: schemas.CharacterCreate, db: Session = Dep
         description=character.description,
         age=character.age,
         height_cm=character.height_cm,
-        avatar_url=character.avatar_url,
+        image_url=character.image_url,
     )
     db.add(new_character)
     db.commit()
@@ -165,11 +165,11 @@ async def generate_character_avatar(
         
         # Generate image
         start_time = time.time()
-        avatar_url = await generate_image_with_pollinations(prompt)
+        image_url = await generate_image_with_pollinations(prompt)
         generation_time = time.time() - start_time
         
         # Update character
-        character.avatar_url = avatar_url
+        character.image_url = image_url
         character.generation_prompt = prompt
         db.commit()
         
@@ -186,7 +186,7 @@ async def generate_character_avatar(
         
         return {
             "character_id": character_id,
-            "avatar_url": avatar_url,
+            "image_url": image_url,
             "prompt_used": prompt
         }
         
@@ -311,9 +311,9 @@ async def search_characters(
         query = query.filter(models.Character.age <= max_age)
     if has_avatar is not None:
         if has_avatar:
-            query = query.filter(models.Character.avatar_url.isnot(None))
+            query = query.filter(models.Character.image_url.isnot(None))
         else:
-            query = query.filter(models.Character.avatar_url.is_(None))
+            query = query.filter(models.Character.image_url.is_(None))
     
     return query.all()
 
@@ -342,7 +342,7 @@ async def get_character_analytics(db: Session = Depends(get_db)):
         "Elder (65+)": len([c for c in characters if c.age and c.age >= 65])
     }
     
-    characters_with_avatars = len([c for c in characters if c.avatar_url])
+    characters_with_avatars = len([c for c in characters if c.image_url])
     
     return {
         "total_characters": len(characters),
@@ -398,14 +398,14 @@ async def bulk_generate_characters(request: schemas.BulkGenerationRequest):
             prompt += ", anime art style, character design, high quality"
             
             # Generate image
-            avatar_url = await generate_image_with_pollinations(prompt)
+            image_url = await generate_image_with_pollinations(prompt)
             
             results.append({
                 "name": char_data.name,
                 "description": char_data.description,
                 "age": char_data.age,
                 "height_cm": char_data.height_cm,
-                "avatar_url": avatar_url,
+                "image_url": image_url,
                 "generated": True
             })
             
@@ -418,7 +418,7 @@ async def bulk_generate_characters(request: schemas.BulkGenerationRequest):
                 "description": char_data.description,
                 "age": char_data.age,
                 "height_cm": char_data.height_cm,
-                "avatar_url": None,
+                "image_url": None,
                 "generated": False,
                 "error": str(e)
             })
