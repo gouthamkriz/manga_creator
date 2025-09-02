@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Float, TIMESTAMP, Text, ForeignKey, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Float, TIMESTAMP, Text, ForeignKey, Boolean, JSON, Numeric
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from db_connect import Base
@@ -7,16 +7,19 @@ from db_connect import Base
 class Character(Base):
     __tablename__ = "characters"
 
+    # FIXED: Match exact database schema
     id = Column(Integer, primary_key=True, index=True)
-    char_code = Column(String, unique=True, index=True, nullable=False)
-    name = Column(String, nullable=False)
-    description = Column(Text)
-    age = Column(Integer)
-    height_cm = Column(Float)
-    image_url = Column(String, nullable=True)  # Can store base64 or URL
-    generation_prompt = Column(Text)  # Store the prompt used for generation
+    char_code = Column(Text, nullable=False)  # Changed to Text, has default in DB
+    name = Column(Text, nullable=False)       # Changed to Text
+    description = Column(Text)                # Already correct
+    age = Column(Integer)                     # Already correct
+    height_cm = Column(Numeric(6,2))         # FIXED: Changed from Float to Numeric(6,2)
+    image_url = Column(Text)                 # FIXED: Changed from String to Text
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # REMOVED: These columns don't exist in your database
+    # generation_prompt = Column(Text)  # REMOVED - doesn't exist in DB
+    # updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())  # REMOVED
     
     # Relationships
     costumes = relationship("Costume", back_populates="character", cascade="all, delete-orphan")

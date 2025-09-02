@@ -26,7 +26,7 @@ class CharacterResponse(CharacterBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # FIXED: Changed from orm_mode = True
 
 # New schemas for image generation
 class CharacterGenerationRequest(BaseModel):
@@ -96,7 +96,7 @@ class CostumeResponse(CostumeBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # FIXED: Changed from orm_mode = True
 
 class AgeStateBase(BaseModel):
     age: int
@@ -113,7 +113,7 @@ class AgeStateResponse(AgeStateBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # FIXED: Changed from orm_mode = True
 
 class CharacterChangeBase(BaseModel):
     when_occurred: Optional[str] = None
@@ -130,7 +130,7 @@ class CharacterChangeResponse(CharacterChangeBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # FIXED: Changed from orm_mode = True
 
 # Enhanced character response with relationships
 class CharacterFullResponse(CharacterResponse):
@@ -140,7 +140,7 @@ class CharacterFullResponse(CharacterResponse):
 
 class CharacterAnalytics(BaseModel):
     total_characters: int
-    average_age: float
+    average_age: Optional[float]  # FIXED: Made optional since not all characters have age
     age_groups: dict
     characters_with_avatars: int
     recent_creations: int

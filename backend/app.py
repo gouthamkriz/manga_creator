@@ -42,7 +42,8 @@ def get_db():
 def get_characters(db: Session = Depends(get_db)):
     return db.query(models.Character).all()
 
-@app.post("/characters/", response_model=schemas.CharacterResponse)
+# FIXED: Remove trailing slash and update to match database schema
+@app.post("/characters", response_model=schemas.CharacterResponse)
 def create_character(character: schemas.CharacterCreate, db: Session = Depends(get_db)):
     # Generate char_code dynamically like C-000X
     count = db.query(models.Character).count() + 1
@@ -55,6 +56,8 @@ def create_character(character: schemas.CharacterCreate, db: Session = Depends(g
         age=character.age,
         height_cm=character.height_cm,
         image_url=character.image_url,
+        # REMOVED: generation_prompt (doesn't exist in DB)
+        # REMOVED: updated_at (doesn't exist in DB)
     )
     db.add(new_character)
     db.commit()
@@ -273,7 +276,7 @@ async def bulk_generate_characters(request: schemas.BulkGenerationRequest):
         raise HTTPException(status_code=500, detail=f"Bulk generation failed: {str(e)}")
 
 # Health check for the image generation service
-@app.get("/health/image-generation")
+@app.get("/characters/health/image-service")
 async def check_image_generation_health():
     """
     Check if Pollinations.AI is responsive
@@ -293,6 +296,46 @@ async def check_image_generation_health():
             "status": "unhealthy",
             "error": str(e)
         }
+
+# Add missing analytics endpoint
+@app.get("/characters/analytics/summary")
+def get_character_analytics(db: Session = Depends(get_db)):
+    """
+    Get character collection analytics
+    """
+    try:
+        total_characters = db.query(models.Character).count()
+        characters_with_avatars = db.query(models.Character).filter(models.Character.image_url.isnot(None)).count()
+        
+        # Calculate average age (only for characters with age data)
+        characters_with_age = db.query(models.Character).filter(models.Character.age.isnot(None)).all()
+        average_age = None
+        if characters_with_age:
+            total_age = sum(c.age for c in characters_with_age)
+            average_age = round(total_age / len(characters_with_age), 1)
+        
+        # Age groups
+        age_groups = {
+            "child": db.query(models.Character).filter(models.Character.age <= 12).count(),
+            "teen": db.query(models.Character).filter(models.Character.age.between(13, 19)).count(),
+            "adult": db.query(models.Character).filter(models.Character.age.between(20, 64)).count(),
+            "elder": db.query(models.Character).filter(models.Character.age >= 65).count()
+        }
+        
+        # Recent creations (last 7 days)
+        from datetime import datetime, timedelta
+        week_ago = datetime.now() - timedelta(days=7)
+        recent_creations = db.query(models.Character).filter(models.Character.created_at >= week_ago).count()
+        
+        return {
+            "total_characters": total_characters,
+            "average_age": average_age,
+            "age_groups": age_groups,
+            "characters_with_avatars": characters_with_avatars,
+            "recent_creations": recent_creations
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analytics failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
