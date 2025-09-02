@@ -10,6 +10,7 @@ import base64
 import time
 from urllib.parse import quote
 import logging
+from sqlalchemy.exc import IntegrityError # Import IntegrityError
 
 router = APIRouter(prefix="/characters", tags=["characters"])
 
@@ -20,10 +21,43 @@ def get_db():
     finally:
         db.close()
 
-def generate_code(prefix: str, db: Session, model_class):
-    """Generate unique codes like C-0001, CO-0001, etc."""
-    count = db.query(model_class).count() + 1
-    return f"{prefix}-{count:04d}"
+async def generate_code(prefix: str, db: Session, model_class):
+    """
+    Generate unique codes like C-0001, CO-0001, etc., with retry logic for concurrency.
+    """
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            # Use a subquery to get the max existing number for the prefix
+            # This is more robust than a simple count, especially if records are deleted
+            last_code_query = db.query(model_class.char_code).filter(
+                model_class.char_code.like(f"{prefix}-%")
+            ).order_by(model_class.char_code.desc()).first()
+
+            if last_code_query and last_code_query[0]:
+                try:
+                    last_number = int(last_code_query[0].split('-')[-1])
+                except ValueError:
+                    last_number = 0 # Fallback if code format is unexpected
+            else:
+                last_number = 0
+
+            new_number = last_number + 1
+            new_code = f"{prefix}-{new_number:04d}"
+            
+            # Check if the code already exists before attempting to use it
+            # This is a pre-check, but the unique constraint is the ultimate guard
+            if db.query(model_class).filter(model_class.char_code == new_code).first():
+                # If it exists, increment and try again in the next loop iteration
+                continue 
+            
+            return new_code
+        except Exception as e:
+            logging.warning(f"Attempt {attempt + 1} to generate code failed: {e}")
+            await asyncio.sleep(0.1 * (attempt + 1)) # Exponential backoff
+    
+    raise Exception(f"Failed to generate unique code after {max_retries} attempts for prefix {prefix}")
+
 
 async def generate_image_with_pollinations(prompt: str, timeout: int = 30) -> str:
     """
@@ -69,20 +103,33 @@ async def get_character(character_id: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=schemas.CharacterResponse)
 async def create_character(character: schemas.CharacterCreate, db: Session = Depends(get_db)):
     """Create a new character"""
-    char_code = generate_code("C", db, models.Character)
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            char_code = await generate_code("C", db, models.Character) # Await the async function
 
-    new_character = models.Character(
-        char_code=char_code,
-        name=character.name,
-        description=character.description,
-        age=character.age,
-        height_cm=character.height_cm,
-        image_url=character.image_url,
-    )
-    db.add(new_character)
-    db.commit()
-    db.refresh(new_character)
-    return new_character
+            new_character = models.Character(
+                char_code=char_code,
+                name=character.name,
+                description=character.description,
+                age=character.age,
+                height_cm=character.height_cm,
+                image_url=character.image_url,
+            )
+            db.add(new_character)
+            db.commit()
+            db.refresh(new_character)
+            return new_character
+        except IntegrityError as e:
+            db.rollback() # Rollback the transaction on unique violation
+            logging.warning(f"IntegrityError on character creation (attempt {attempt + 1}): {e}. Retrying...")
+            await asyncio.sleep(0.1 * (attempt + 1)) # Exponential backoff
+        except Exception as e:
+            db.rollback() # Rollback for other errors too
+            raise HTTPException(status_code=500, detail=f"Failed to create character: {str(e)}")
+    
+    raise HTTPException(status_code=500, detail="Failed to create character after multiple retries due to unique code generation conflict.")
+
 
 @router.post("/generate-variants", response_model=schemas.CharacterGenerationResponse)
 async def generate_character_variants(request: schemas.CharacterGenerationRequest):
@@ -170,7 +217,7 @@ async def generate_character_avatar(
         
         # Update character
         character.image_url = image_url
-        character.generation_prompt = prompt
+        # character.generation_prompt = prompt # This column was removed from the model
         db.commit()
         
         # Log generation history
@@ -217,30 +264,43 @@ async def create_costume(
     if not character:
         raise HTTPException(status_code=404, detail="Character not found")
     
-    costume_code = generate_code("CO", db, models.Costume)
-    
-    new_costume = models.Costume(
-        costume_code=costume_code,
-        character_id=character_id,
-        name=costume.name,
-        description=costume.description,
-        is_default=costume.is_default
-    )
-    
-    if generate_image and costume.description:
+    max_retries = 5
+    for attempt in range(max_retries):
         try:
-            prompt = f"manga style character, {character.name}, wearing {costume.description}, {costume.name}, anime art style"
-            if character.age:
-                prompt += f", {character.age} years old"
+            costume_code = await generate_code("CO", db, models.Costume) # Await the async function
             
-            new_costume.image_url = await generate_image_with_pollinations(prompt)
+            new_costume = models.Costume(
+                costume_code=costume_code,
+                character_id=character_id,
+                name=costume.name,
+                description=costume.description,
+                is_default=costume.is_default
+            )
+            
+            if generate_image and costume.description:
+                try:
+                    prompt = f"manga style character, {character.name}, wearing {costume.description}, {costume.name}, anime art style"
+                    if character.age:
+                        prompt += f", {character.age} years old"
+                    
+                    new_costume.image_url = await generate_image_with_pollinations(prompt)
+                except Exception as e:
+                    logging.warning(f"Costume image generation failed: {e}")
+            
+            db.add(new_costume)
+            db.commit()
+            db.refresh(new_costume)
+            return new_costume
+        except IntegrityError as e:
+            db.rollback()
+            logging.warning(f"IntegrityError on costume creation (attempt {attempt + 1}): {e}. Retrying...")
+            await asyncio.sleep(0.1 * (attempt + 1))
         except Exception as e:
-            logging.warning(f"Costume image generation failed: {e}")
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to create costume: {str(e)}")
     
-    db.add(new_costume)
-    db.commit()
-    db.refresh(new_costume)
-    return new_costume
+    raise HTTPException(status_code=500, detail="Failed to create costume after multiple retries due to unique code generation conflict.")
+
 
 @router.get("/{character_id}/costumes", response_model=List[schemas.CostumeResponse])
 async def get_character_costumes(character_id: int, db: Session = Depends(get_db)):
@@ -264,32 +324,45 @@ async def create_age_state(
     if not character:
         raise HTTPException(status_code=404, detail="Character not found")
     
-    age_code = generate_code("A", db, models.AgeState)
-    
-    new_age_state = models.AgeState(
-        age_code=age_code,
-        character_id=character_id,
-        age=age_state.age,
-        notes=age_state.notes
-    )
-    
-    if generate_image:
+    max_retries = 5
+    for attempt in range(max_retries):
         try:
-            prompt = f"manga style character, {character.name}, {age_state.age} years old"
-            if character.description:
-                prompt += f", {character.description}"
-            if age_state.notes:
-                prompt += f", {age_state.notes}"
-            prompt += ", anime art style, age progression"
+            age_code = await generate_code("A", db, models.AgeState) # Await the async function
             
-            new_age_state.image_url = await generate_image_with_pollinations(prompt)
+            new_age_state = models.AgeState(
+                age_code=age_code,
+                character_id=character_id,
+                age=age_state.age,
+                notes=age_state.notes
+            )
+            
+            if generate_image:
+                try:
+                    prompt = f"manga style character, {character.name}, {age_state.age} years old"
+                    if character.description:
+                        prompt += f", {character.description}"
+                    if age_state.notes:
+                        prompt += f", {age_state.notes}"
+                    prompt += ", anime art style, age progression"
+                    
+                    new_age_state.image_url = await generate_image_with_pollinations(prompt)
+                except Exception as e:
+                    logging.warning(f"Age state image generation failed: {e}")
+            
+            db.add(new_age_state)
+            db.commit()
+            db.refresh(new_age_state)
+            return new_age_state
+        except IntegrityError as e:
+            db.rollback()
+            logging.warning(f"IntegrityError on age state creation (attempt {attempt + 1}): {e}. Retrying...")
+            await asyncio.sleep(0.1 * (attempt + 1))
         except Exception as e:
-            logging.warning(f"Age state image generation failed: {e}")
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Failed to create age state: {str(e)}")
     
-    db.add(new_age_state)
-    db.commit()
-    db.refresh(new_age_state)
-    return new_age_state
+    raise HTTPException(status_code=500, detail="Failed to create age state after multiple retries due to unique code generation conflict.")
+
 
 # Character search and analytics
 @router.get("/search/", response_model=List[schemas.CharacterResponse])

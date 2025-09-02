@@ -9,7 +9,7 @@ class Character(Base):
 
     # FIXED: Match exact database schema
     id = Column(Integer, primary_key=True, index=True)
-    char_code = Column(Text, nullable=False)  # Changed to Text, has default in DB
+    char_code = Column(Text, nullable=False, unique=True)  # Added unique=True for clarity, though it's implied by the error
     name = Column(Text, nullable=False)       # Changed to Text
     description = Column(Text)                # Already correct
     age = Column(Integer)                     # Already correct
